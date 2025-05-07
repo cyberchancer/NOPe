@@ -101,7 +101,7 @@ unsigned char payload[] = {
 
 ## Changelog
 
-- `README.md`: Reorganized structure; added Prerequisites, Installation, Features, Tradecraft & MITRE Mapping, and License sections; fixed command hyphens for consistent copy-paste; updated Usage and Generating Shellcode examples.
+- `README.md`: Reorganized structure; added Prerequisites, Installation, Features, Tradecraft & MITRE Mapping sections; fixed command hyphens for consistent copy-paste; updated Usage and Generating Shellcode examples.
 - Added full definitions for `X64_NOPS` and `X86_NOPS` in `NOPe.py` to resolve the NameError and enable dual-architecture/OS (Windows/Unix) support.
 - Annotated `NOPe.py` and `bin2sc.py` with in-code comments mapping to red team tradecraft (obfuscation, execution, staging) and MITRE ATT&CK techniques.
 - Introduced file-level headers in both scripts clarifying purpose and tradecraft context.
