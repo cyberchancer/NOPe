@@ -1,6 +1,3 @@
-# File: NOPe.py
-# Purpose: Utility to prepend randomized NOP sleds to shellcode and execute it in memory.
-# Red Team Tradecraft: Implements obfuscation (MITRE ATT&CK T1027) and in-memory execution (T1059).
 import ctypes
 import random
 import argparse
@@ -80,11 +77,6 @@ X86_NOPS = {
 
 }
 
-
-# Function: execute_shellcode
-# Description: Reads raw shellcode, prepends a randomized NOP variant for obfuscation,
-#              allocates executable memory, and transfers execution to the payload.
-# Red Team Tradecraft: Evades static analysis through randomized NOP sleds (T1027) and leverages in-memory execution (T1059).
 def execute_shellcode(shellcode_file: str, arch: str, verbose: bool = False) -> None:
     """Load and execute shellcode with a random NOP for a given architecture."""
     with open(shellcode_file, 'rb') as f:
@@ -122,10 +114,6 @@ def execute_shellcode(shellcode_file: str, arch: str, verbose: bool = False) -> 
 
     ctypes.windll.kernel32.WaitForSingleObject(thread_handle, 0xFFFFFFFF)
 
-
-# Function: list_nops
-# Description: Enumerates supported NOP variants for the selected architecture to inform payload crafting.
-# Red Team Tradecraft: Supports obfuscation strategy planning and minimal footprint discovery (T1027).
 def list_nops(arch: str) -> None:
     """List all supported NOP instructions for the selected architecture."""
     print(f"\nSupported NOP instructions for architecture: {arch.upper()}")
@@ -134,10 +122,6 @@ def list_nops(arch: str) -> None:
         print(f"  {nop.hex():<20} {desc}")
     print()
 
-
-# Function: main
-# Description: Parses CLI arguments and routes to listing or execution workflows, providing a unified operator interface.
-# Red Team Tradecraft: Streamlines payload deployment workflows, enhancing OPSEC agility.
 def main():
     parser = argparse.ArgumentParser(
         description="Execute shellcode with random prepended NOP (x86 or x64).",
@@ -171,7 +155,6 @@ def main():
         print(f"[+] Executing shellcode from: {args.file}")
 
     execute_shellcode(args.file, args.arch, args.verbose)
-
 
 if __name__ == "__main__":
     main()
