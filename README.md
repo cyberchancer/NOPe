@@ -10,17 +10,6 @@ A flexible payload execution toolkit that prepends randomized NOP sleds to shell
 - 32-bit Python interpreter for x86 payloads
 - 64-bit Python interpreter for x64 payloads
 
-## Installation
-
-```bash
-git clone https://github.com/cyberchancer/NOPe.git
-cd NOPe
-python3 -m venv venv
-source venv/bin/activate
-```
-
-*(No external dependencies; uses standard `ctypes`, `mmap`, and `argparse`.)*
-
 ## Features
 
 - Dual-architecture support: x86 and x64 shellcode
