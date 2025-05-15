@@ -77,6 +77,7 @@ X86_NOPS = {
 
 }
 
+
 def execute_shellcode(shellcode_file: str, arch: str, verbose: bool = False) -> None:
     """Load and execute shellcode with a random NOP for a given architecture."""
     with open(shellcode_file, 'rb') as f:
@@ -114,6 +115,7 @@ def execute_shellcode(shellcode_file: str, arch: str, verbose: bool = False) -> 
 
     ctypes.windll.kernel32.WaitForSingleObject(thread_handle, 0xFFFFFFFF)
 
+
 def list_nops(arch: str) -> None:
     """List all supported NOP instructions for the selected architecture."""
     print(f"\nSupported NOP instructions for architecture: {arch.upper()}")
@@ -121,6 +123,7 @@ def list_nops(arch: str) -> None:
     for nop, desc in nops.items():
         print(f"  {nop.hex():<20} {desc}")
     print()
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -155,6 +158,7 @@ def main():
         print(f"[+] Executing shellcode from: {args.file}")
 
     execute_shellcode(args.file, args.arch, args.verbose)
+
 
 if __name__ == "__main__":
     main()
