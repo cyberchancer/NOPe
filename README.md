@@ -50,7 +50,7 @@ msfvenom -p windows/messagebox TEXT="NOPe32" TITLE="Hello" -f raw > windows-msgb
 msfvenom -p linux/x64/exec CMD="echo 'Hello with NOPe64'" -f raw > linux-msgprint.x64.bin
 
 # x86 linux via MSFVenom 
-msfvenom -p linux/x86/exec CMD="echo 'Hello with NOPe32'" -f raw > linux-msgprint.x64.bin
+msfvenom -p linux/x86/exec CMD="echo 'Hello with NOPe32'" -f raw > linux-msgprint.x86.bin
 ```
 
 ## bin2sc
