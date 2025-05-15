@@ -40,11 +40,17 @@ python3 NOPe.py --arch x64 --list-nops
 ## Generating Shellcode
 
 ```bash
-# x64 messagebox via MSFVenom
-msfvenom -p windows/x64/messagebox TEXT="NOPe64" TITLE="Hello" -f raw > msgbox.x64.bin
+# x64 windows messagebox via MSFVenom
+msfvenom -p windows/x64/messagebox TEXT="NOPe64" TITLE="Hello" -f raw > windows-msgbox.x64.bin
 
-# x86 messagebox via MSFVenom
-msfvenom -p windows/messagebox TEXT="NOPe32" TITLE="Hello" -f raw > msgbox.x86.bin
+# x86 windows messagebox via MSFVenom
+msfvenom -p windows/messagebox TEXT="NOPe32" TITLE="Hello" -f raw > windows-msgbox.x86.bin
+
+# x64 linux via MSFVenom 
+msfvenom -p linux/x64/exec CMD="echo 'Hello with NOPe64'" -f raw > linux-msgprint.x64.bin
+
+# x86 linux via MSFVenom 
+msfvenom -p linux/x86/exec CMD="echo 'Hello with NOPe32'" -f raw > linux-msgprint.x64.bin
 ```
 
 ## bin2sc
